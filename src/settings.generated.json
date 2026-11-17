@@ -1,0 +1,284 @@
+{
+  "gisoo.region": {
+    "type": "string",
+    "default": "global",
+    "enum": [
+      "global",
+      "iran"
+    ],
+    "enumDescriptions": {
+      "en": [
+        "gisoo.pro (global)",
+        "ir.gisoo.pro (Iran endpoint)"
+      ],
+      "fa": [
+        "gisoo.pro (جهانی)",
+        "ir.gisoo.pro (نقطهٔ اتصال ایران)"
+      ]
+    },
+    "description": {
+      "en": "Which Gisoo endpoint to use. Choose \"iran\" when gisoo.pro is not reachable directly from your network.",
+      "fa": "کدام نقطهٔ اتصال گیسو استفاده شود. اگر gisoo.pro از شبکهٔ شما مستقیم در دسترس نیست، «iran» را انتخاب کنید."
+    },
+    "scope": "application"
+  },
+  "gisoo.baseUrl": {
+    "type": "string",
+    "default": "",
+    "enumDescriptions": {},
+    "description": {
+      "en": "Custom API base URL (for example `https://gisoo.pro/api/v1`). Leave empty to follow `gisoo.region`. Your API key is sent only to this host.",
+      "fa": "نشانی پایهٔ دلخواه API (مثلاً `https://gisoo.pro/api/v1`). خالی بگذارید تا از `gisoo.region` پیروی شود. کلید دسترسی شما فقط به همین میزبان فرستاده می‌شود."
+    },
+    "scope": "application"
+  },
+  "gisoo.model": {
+    "type": "string",
+    "default": "",
+    "enumDescriptions": {},
+    "description": {
+      "en": "Model id for new chats. Leave empty for Gisoo Auto, which picks a suitable model for each message.",
+      "fa": "شناسهٔ مدل برای گفت‌وگوهای جدید. خالی بگذارید تا انتخاب خودکار گیسو برای هر پیام مدل مناسب را انتخاب کند."
+    }
+  },
+  "gisoo.permissionMode": {
+    "type": "string",
+    "default": "ask",
+    "enum": [
+      "ask",
+      "autoEdit",
+      "plan",
+      "bypass"
+    ],
+    "enumDescriptions": {
+      "en": [
+        "Every edit and command waits for your approval.",
+        "Edits are applied directly; commands still ask.",
+        "Read-only: Gisoo writes a plan and stops.",
+        "Edits and commands run without asking; only irreversible commands still ask. Use only in a project you can restore."
+      ],
+      "fa": [
+        "هر ویرایش و دستور منتظر تأیید شما می‌ماند.",
+        "ویرایش‌ها مستقیم اعمال می‌شوند؛ دستورها هنوز تأیید می‌خواهند.",
+        "فقط خواندن: گیسو برنامه می‌نویسد و متوقف می‌شود.",
+        "ویرایش‌ها و دستورها بدون پرسیدن اجرا می‌شوند؛ فقط دستورهای برگشت‌ناپذیر تأیید می‌خواهند. فقط در پروژه‌ای که قابل برگرداندن است."
+      ]
+    },
+    "description": {
+      "en": "What Gisoo may do without asking you first.",
+      "fa": "گیسو بدون پرسیدن از شما چه کارهایی را می‌تواند انجام دهد."
+    },
+    "scope": "application"
+  },
+  "gisoo.maxCostPerTask": {
+    "type": "number",
+    "default": 0,
+    "enumDescriptions": {},
+    "description": {
+      "en": "Stop a run when its estimated cost (in Gisoo coins) reaches this amount. 0 means no limit.",
+      "fa": "وقتی هزینهٔ تقریبی یک اجرا (به سکهٔ گیسو) به این مقدار برسد، اجرا متوقف می‌شود. صفر یعنی بدون سقف."
+    },
+    "scope": "application",
+    "minimum": 0
+  },
+  "gisoo.importExternalChats": {
+    "type": "boolean",
+    "default": true,
+    "enumDescriptions": {},
+    "description": {
+      "en": "Show this folder's chats from other AI coding tools (Claude Code, Codex, GitHub Copilot Chat, Gemini CLI, Cline, Roo Code, Kilo Code) in the chat history, so you can continue them in Gisoo. They are read only on this computer and copied into Gisoo only when you open one.",
+      "fa": "نمایش گفت‌وگوهای این پوشه در ابزارهای دیگر برنامه‌نویسی با هوش مصنوعی (Claude Code، Codex، GitHub Copilot Chat، Gemini CLI، Cline، Roo Code و Kilo Code) در فهرست گفت‌وگوها، تا بتوانید آن‌ها را در گیسو ادامه دهید. این گفت‌وگوها فقط روی همین رایانه خوانده می‌شوند و تنها وقتی یکی را باز کنید، نسخه‌ای از آن در گیسو ساخته می‌شود."
+    },
+    "scope": "application"
+  },
+  "gisoo.showCost": {
+    "type": "boolean",
+    "default": true,
+    "enumDescriptions": {},
+    "description": {
+      "en": "Show the estimated cost of each turn and the balance in the status bar.",
+      "fa": "نمایش هزینهٔ تقریبی هر مرحله و اعتبار در نوار وضعیت."
+    }
+  },
+  "gisoo.language": {
+    "type": "string",
+    "default": "auto",
+    "enum": [
+      "auto",
+      "en",
+      "fa"
+    ],
+    "enumDescriptions": {
+      "en": [
+        "Follow the VS Code display language.",
+        "English",
+        "Persian"
+      ],
+      "fa": [
+        "پیروی از زبان نمایش VS Code.",
+        "انگلیسی",
+        "فارسی"
+      ]
+    },
+    "description": {
+      "en": "Language of the Gisoo chat interface.",
+      "fa": "زبان رابط گفت‌وگوی گیسو."
+    }
+  },
+  "gisoo.subagentModel": {
+    "type": "string",
+    "default": "",
+    "enumDescriptions": {},
+    "description": {
+      "en": "Model id for sub-agents started with the `task` tool. Leave empty to use the chat model.",
+      "fa": "شناسهٔ مدل برای زیرایجنت‌هایی که با ابزار `task` شروع می‌شوند. خالی بگذارید تا از مدل گفت‌وگو استفاده شود."
+    }
+  },
+  "gisoo.agents.maxParallel": {
+    "type": "integer",
+    "default": 3,
+    "enumDescriptions": {},
+    "description": {
+      "en": "How many sub-agents may run at the same time.",
+      "fa": "چند زیرایجنت می‌توانند هم‌زمان اجرا شوند."
+    },
+    "scope": "application",
+    "minimum": 1,
+    "maximum": 8
+  },
+  "gisoo.agents.maxTurns": {
+    "type": "integer",
+    "default": 25,
+    "enumDescriptions": {},
+    "description": {
+      "en": "Maximum model turns for one sub-agent before it stops.",
+      "fa": "حداکثر تعداد نوبت‌های مدل برای یک زیرایجنت پیش از توقف."
+    },
+    "scope": "application",
+    "minimum": 1,
+    "maximum": 100
+  },
+  "gisoo.compat.claude": {
+    "type": "boolean",
+    "default": true,
+    "enumDescriptions": {},
+    "description": {
+      "en": "Read Claude Code files for this folder: CLAUDE.md, `.claude/commands`, `.claude/skills`, `.claude/agents` and Claude's memory. Gisoo never writes into `~/.claude`.",
+      "fa": "خواندن فایل‌های Claude Code برای این پوشه: CLAUDE.md، ‏`.claude/commands`، ‏`.claude/skills`، ‏`.claude/agents` و حافظهٔ Claude. گیسو هرگز در `~/.claude` چیزی نمی‌نویسد."
+    }
+  },
+  "gisoo.graphify.autoInstall": {
+    "type": "string",
+    "default": "ask",
+    "enum": [
+      "ask",
+      "always",
+      "never"
+    ],
+    "enumDescriptions": {
+      "en": [
+        "Ask once per workspace.",
+        "Install without asking.",
+        "Never install."
+      ],
+      "fa": [
+        "برای هر فضای کاری یک بار بپرسد.",
+        "بدون پرسیدن نصب کند.",
+        "هرگز نصب نکند."
+      ]
+    },
+    "description": {
+      "en": "Whether Gisoo may install Graphify (a local code-graph tool, PyPI package `graphifyy`) for a better understanding of the project.",
+      "fa": "آیا گیسو اجازه دارد Graphify (ابزار محلی گراف کد، بستهٔ PyPI با نام `graphifyy`) را برای شناخت بهتر پروژه نصب کند."
+    },
+    "scope": "application"
+  },
+  "gisoo.graphify.budget": {
+    "type": "integer",
+    "default": 1500,
+    "enumDescriptions": {},
+    "description": {
+      "en": "Maximum tokens a code-graph answer may use in the prompt.",
+      "fa": "حداکثر توکن‌هایی که پاسخ گراف کد می‌تواند در پرامپت مصرف کند."
+    },
+    "minimum": 200,
+    "maximum": 4000
+  },
+  "gisoo.browserPath": {
+    "type": "string",
+    "default": "",
+    "enumDescriptions": {},
+    "description": {
+      "en": "Path to a Chromium-based browser used for page screenshots. Leave empty to search the standard locations.",
+      "fa": "مسیر یک مرورگر مبتنی بر Chromium برای گرفتن تصویر از صفحه‌ها. خالی بگذارید تا در مسیرهای استاندارد جست‌وجو شود."
+    },
+    "scope": "machine"
+  },
+  "gisoo.webFetch.enabled": {
+    "type": "boolean",
+    "default": false,
+    "enumDescriptions": {},
+    "description": {
+      "en": "Allow the `web_fetch` tool to download public web pages the agent asks for. Each fetch still asks for your approval; local and private network addresses are always refused.",
+      "fa": "به ابزار `web_fetch` اجازه می‌دهد صفحه‌های عمومی وب را که ایجنت درخواست می‌کند دانلود کند. هر دریافت باز هم از شما اجازه می‌گیرد و نشانی‌های شبکهٔ محلی و خصوصی همیشه رد می‌شوند."
+    },
+    "scope": "application"
+  },
+  "gisoo.allowedCommands": {
+    "type": "array",
+    "default": [],
+    "enumDescriptions": {},
+    "description": {
+      "en": "Command prefixes the agent may run without asking, for example `npm test`. Commands that chain, redirect or substitute through the shell always ask. Read from your user settings only.",
+      "fa": "پیشوند فرمان‌هایی که ایجنت می‌تواند بدون پرسیدن اجرا کند، مثلاً `npm test`. فرمان‌هایی که در پوسته زنجیره، تغییر مسیر یا جایگزینی دارند همیشه از شما اجازه می‌گیرند. فقط از تنظیمات کاربری شما خوانده می‌شود."
+    },
+    "scope": "application"
+  },
+  "gisoo.customInstructions": {
+    "type": "string",
+    "default": "",
+    "enumDescriptions": {},
+    "description": {
+      "en": "Extra instructions added to every request. Read from your user settings only.",
+      "fa": "دستورهای اضافه‌ای که به هر درخواست افزوده می‌شود. فقط از تنظیمات کاربری شما خوانده می‌شود."
+    },
+    "scope": "application"
+  },
+  "gisoo.maxSteps": {
+    "type": "integer",
+    "default": 60,
+    "enumDescriptions": {},
+    "description": {
+      "en": "Maximum number of model steps in one task.",
+      "fa": "بیشترین تعداد گام مدل در یک کار."
+    },
+    "scope": "application",
+    "minimum": 1,
+    "maximum": 1000
+  },
+  "gisoo.chatLocation": {
+    "type": "string",
+    "default": "right",
+    "enum": [
+      "right",
+      "left",
+      "bottom"
+    ],
+    "enumDescriptions": {
+      "en": [
+        "Right sidebar (secondary side bar). Needs VS Code 1.106 or newer; older versions use the left sidebar.",
+        "Left sidebar (activity bar).",
+        "Bottom panel, next to the terminal."
+      ],
+      "fa": [
+        "نوار کناری راست. به VS Code نسخهٔ ۱.۱۰۶ یا جدیدتر نیاز دارد؛ نسخه‌های قدیمی‌تر نوار کناری چپ را نشان می‌دهند.",
+        "نوار کناری چپ.",
+        "پنل پایین، کنار ترمینال."
+      ]
+    },
+    "description": {
+      "en": "Where the Gisoo chat panel opens. Chats can also be opened in editor tabs (Gisoo: New chat in an editor tab), several at once.",
+      "fa": "جای پنل گفت‌وگوی گیسو. گفت‌وگو را در تب ویرایشگر هم می‌توانید باز کنید (گیسو: گفت‌وگوی جدید در تب ویرایشگر)، چند تا با هم."
+    }
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "name": "gisoo-desktop",
+  "productName": "Gisoo",
+  "version": "0.1.0",
+  "description": "Gisoo Desktop: an AI coding agent for Windows and macOS, with a folder of chats for every project.",
+  "license": "MIT",
+  "author": {
+    "name": "NetArz",
+    "email": "dev@gisoo.pro",
+    "url": "https://gisoo.pro"
+  },
+  "homepage": "https://gisoo.pro/desktop",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/netarz/gisoo-desktop"
+  },
+  "main": "dist/main.js",
+  "scripts": {
+    "sync-core": "node scripts/sync-core.mjs",
+    "build": "node esbuild.mjs",
+    "build:prod": "node esbuild.mjs --production",
+    "watch": "node esbuild.mjs --watch",
+    "start": "node esbuild.mjs && electron .",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p shell/tsconfig.json --noEmit",
+    "dist": "node esbuild.mjs --production && electron-builder",
+    "dist:win": "node esbuild.mjs --production && electron-builder --win",
+    "dist:mac": "node esbuild.mjs --production && electron-builder --mac",
+    "icons": "electron scripts/make-icons.cjs"
+  },
+  "build": {
+    "appId": "pro.gisoo.desktop",
+    "productName": "Gisoo",
+    "copyright": "Copyright (c) 2026 NetArz",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "assets/**",
+      "package.json",
+      "LICENSE"
+    ],
+    "protocols": [
+      {
+        "name": "Gisoo sign-in",
+        "schemes": [
+          "gisoo-desktop"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Gisoo-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Gisoo"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "artifactName": "Gisoo-${version}-${arch}.${ext}",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Gisoo uses the microphone only while you dictate a message."
+      }
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Development"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/vscode": "^1.146.0",
+    "@vscode/codicons": "^0.0.46-24",
+    "dompurify": "^3.4.18",
+    "electron": "^39.8.10",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
+    "highlight.js": "^11.12.0",
+    "marked": "^18.2.1",
+    "preact": "^11.2.0",
+    "typescript": "~6.0.3",
+    "vazirmatn": "^33.0.3"
+  }
+}

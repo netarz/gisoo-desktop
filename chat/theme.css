@@ -1,0 +1,160 @@
+/*
+ * The extension's chat page reads VS Code's theme variables. Outside VS Code they are defined here,
+ * from Gisoo's own palette: calm neutrals like Codex, gold as the one accent. Light by default,
+ * dark when the system is dark, either one forced by data-theme on <html>.
+ */
+
+:root {
+  --g-bg: #ffffff;
+  --g-surface: #f6f6f4;
+  --g-raised: #ffffff;
+  --g-text: #1f1f23;
+  --g-muted: #6e6e76;
+  --g-faint: #9a9aa2;
+  --g-line: rgba(20, 20, 30, 0.1);
+  --g-line-strong: rgba(20, 20, 30, 0.18);
+  --g-hover: rgba(20, 20, 30, 0.05);
+  --g-active: rgba(20, 20, 30, 0.09);
+  --g-gold: #b8921c;
+  --g-gold-soft: rgba(201, 162, 39, 0.16);
+  --g-on-gold: #1b1503;
+  --g-link: #9a7612;
+  --g-code: #f2f1ee;
+  --g-ok: #1f9d55;
+  --g-bad: #d1453b;
+  --g-warn: #b7791f;
+  --g-shadow: 0 8px 28px rgba(20, 20, 30, 0.12), 0 1px 3px rgba(20, 20, 30, 0.08);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --g-bg: #17171a;
+    --g-surface: #1f1f23;
+    --g-raised: #26262b;
+    --g-text: #ececef;
+    --g-muted: #a0a0a8;
+    --g-faint: #75757d;
+    --g-line: rgba(255, 255, 255, 0.08);
+    --g-line-strong: rgba(255, 255, 255, 0.16);
+    --g-hover: rgba(255, 255, 255, 0.05);
+    --g-active: rgba(255, 255, 255, 0.09);
+    --g-gold: #d4ad35;
+    --g-gold-soft: rgba(212, 173, 53, 0.16);
+    --g-on-gold: #1b1503;
+    --g-link: #e0bd52;
+    --g-code: #1d1d21;
+    --g-ok: #3fb950;
+    --g-bad: #f0645a;
+    --g-warn: #d9a43c;
+    --g-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --g-bg: #17171a;
+  --g-surface: #1f1f23;
+  --g-raised: #26262b;
+  --g-text: #ececef;
+  --g-muted: #a0a0a8;
+  --g-faint: #75757d;
+  --g-line: rgba(255, 255, 255, 0.08);
+  --g-line-strong: rgba(255, 255, 255, 0.16);
+  --g-hover: rgba(255, 255, 255, 0.05);
+  --g-active: rgba(255, 255, 255, 0.09);
+  --g-gold: #d4ad35;
+  --g-gold-soft: rgba(212, 173, 53, 0.16);
+  --g-on-gold: #1b1503;
+  --g-link: #e0bd52;
+  --g-code: #1d1d21;
+  --g-ok: #3fb950;
+  --g-bad: #f0645a;
+  --g-warn: #d9a43c;
+  --g-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+:root {
+  --vscode-font-family: 'Vazirmatn', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --vscode-font-size: 14px;
+  --vscode-font-weight: 400;
+  --vscode-editor-font-family: 'Cascadia Code', 'SF Mono', Menlo, Consolas, 'Vazirmatn', monospace;
+  --vscode-editor-font-size: 13px;
+
+  --vscode-foreground: var(--g-text);
+  --vscode-descriptionForeground: var(--g-muted);
+  --vscode-icon-foreground: var(--g-muted);
+  --vscode-errorForeground: var(--g-bad);
+  --vscode-focusBorder: var(--g-gold);
+  --vscode-contrastBorder: transparent;
+  --vscode-contrastActiveBorder: transparent;
+
+  --vscode-editor-background: var(--g-bg);
+  --vscode-editor-foreground: var(--g-text);
+  --vscode-sideBar-background: var(--g-bg);
+  --vscode-sideBarSectionHeader-background: transparent;
+  --vscode-editorWidget-background: var(--g-surface);
+  --vscode-editorWidget-border: var(--g-line);
+  --vscode-widget-border: var(--g-line);
+  --vscode-widget-shadow: rgba(0, 0, 0, 0.18);
+  --vscode-panel-border: var(--g-line);
+  --vscode-editorCursor-foreground: var(--g-gold);
+  --vscode-editorWarning-foreground: var(--g-warn);
+  --vscode-editor-findMatchHighlightBackground: var(--g-gold-soft);
+
+  --vscode-input-background: var(--g-raised);
+  --vscode-input-foreground: var(--g-text);
+  --vscode-input-border: var(--g-line-strong);
+  --vscode-input-placeholderForeground: var(--g-faint);
+  --vscode-inputValidation-errorBorder: var(--g-bad);
+
+  --vscode-button-background: var(--g-gold);
+  --vscode-button-foreground: var(--g-on-gold);
+  --vscode-button-hoverBackground: color-mix(in srgb, var(--g-gold) 88%, #000);
+  --vscode-button-secondaryBackground: var(--g-active);
+  --vscode-button-secondaryForeground: var(--g-text);
+  --vscode-button-secondaryHoverBackground: var(--g-line-strong);
+
+  --vscode-badge-background: var(--g-gold-soft);
+  --vscode-badge-foreground: var(--g-text);
+  --vscode-progressBar-background: var(--g-gold);
+
+  --vscode-textLink-foreground: var(--g-link);
+  --vscode-textLink-activeForeground: var(--g-gold);
+  --vscode-textCodeBlock-background: var(--g-code);
+  --vscode-textBlockQuote-background: var(--g-surface);
+  --vscode-textBlockQuote-border: var(--g-gold);
+
+  --vscode-toolbar-hoverBackground: var(--g-hover);
+  --vscode-toolbar-activeBackground: var(--g-active);
+  --vscode-list-hoverBackground: var(--g-hover);
+  --vscode-list-activeSelectionBackground: var(--g-active);
+  --vscode-list-activeSelectionForeground: var(--g-text);
+
+  --vscode-quickInput-background: var(--g-raised);
+  --vscode-quickInput-foreground: var(--g-text);
+  --vscode-quickInputList-focusBackground: var(--g-active);
+  --vscode-quickInputList-focusForeground: var(--g-text);
+  --vscode-notifications-background: var(--g-raised);
+  --vscode-notifications-foreground: var(--g-text);
+
+  --vscode-scrollbarSlider-background: rgba(128, 128, 128, 0.22);
+  --vscode-scrollbarSlider-hoverBackground: rgba(128, 128, 128, 0.36);
+  --vscode-scrollbarSlider-activeBackground: rgba(128, 128, 128, 0.5);
+
+  --vscode-testing-iconPassed: var(--g-ok);
+  --vscode-charts-green: var(--g-ok);
+  --vscode-gitDecoration-addedResourceForeground: var(--g-ok);
+  --vscode-gitDecoration-deletedResourceForeground: var(--g-bad);
+  --vscode-diffEditor-insertedTextBackground: color-mix(in srgb, var(--g-ok) 16%, transparent);
+  --vscode-diffEditor-removedTextBackground: color-mix(in srgb, var(--g-bad) 16%, transparent);
+
+  --vscode-debugTokenExpression-string: #c27d3a;
+  --vscode-debugTokenExpression-number: #4f9a6e;
+  --vscode-symbolIcon-variableForeground: #4a8ec2;
+  --vscode-symbolIcon-keywordForeground: #a06cc4;
+  --vscode-symbolIcon-functionForeground: #b8921c;
+  --vscode-symbolIcon-fieldForeground: #4a8ec2;
+  --vscode-symbolIcon-classForeground: #c27d3a;
+}

@@ -1,0 +1,52 @@
+/*
+ * The extension's chat page inside the desktop window. The header doubles as the window's title bar
+ * (the window has no frame), so it is a drag region and leaves room for the window controls on the
+ * side the shell says (--reserve-left / --reserve-right). Buttons that only make sense inside VS Code
+ * (open in a tab, move the panel) are hidden; the sidebar already has "new chat".
+ */
+
+html, body { background: var(--g-bg); }
+body { font-feature-settings: 'ss01'; -webkit-font-smoothing: antialiased; }
+
+.header {
+  min-height: 44px;
+  padding-block: 6px;
+  padding-left: calc(12px + var(--reserve-left, 0px));
+  padding-right: calc(12px + var(--reserve-right, 0px));
+  border-block-end: 1px solid transparent;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.header * { -webkit-app-region: no-drag; }
+
+.header-title {
+  flex: 0 1 auto;
+  max-width: min(52%, 520px);
+  font-weight: 600;
+}
+.header-title > .codicon-history { display: none; }
+/* The empty space between the title and the buttons is what the window is dragged by. */
+.header-title + * { margin-inline-start: auto; }
+
+.header .icon-btn:has(> .codicon-multiple-windows),
+.header .icon-btn:has(> .codicon-layout),
+.header .icon-btn:has(> .codicon-add) { display: none; }
+
+/* Conversation column: centred and readable on a wide window, like Codex. */
+.messages-inner, .empty, .pinned, .input-bar {
+  width: 100%;
+  max-width: 820px;
+  margin-inline: auto;
+}
+.input-bar { padding-block-end: 14px; }
+.empty-title { font-size: 1.55em; font-weight: 600; letter-spacing: 0; }
+
+/* Calmer chrome. */
+.balance-pill { border-color: var(--g-line); }
+.toast { box-shadow: var(--g-shadow); }
+.popover, .overlay-panel { box-shadow: var(--g-shadow); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--vscode-scrollbarSlider-background); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--vscode-scrollbarSlider-hoverBackground); background-clip: padding-box; border: 2px solid transparent; }
+::-webkit-scrollbar-track { background: transparent; }
