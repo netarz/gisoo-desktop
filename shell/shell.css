@@ -171,6 +171,9 @@ svg { flex: none; }
 .frames { position: absolute; inset: 0; }
 .frames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--g-bg); visibility: hidden; }
 .frames iframe.on { visibility: visible; }
+/* The chat header as the window's title bar: a drag region with no-drag holes, transparent to clicks. */
+.chat-drag { position: absolute; z-index: 1; pointer-events: none; -webkit-app-region: drag; }
+.chat-drag-hole { position: absolute; pointer-events: none; -webkit-app-region: no-drag; }
 
 .main > .dragbar { position: relative; z-index: 2; padding-inline-start: calc(10px + var(--ctl-start, 0px)); padding-inline-end: calc(10px + var(--ctl-end, 0px)); }
 

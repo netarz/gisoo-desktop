@@ -12,10 +12,12 @@
   document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
   if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
 
+  // The shell window; this page runs on an origin of its own (app://chat) and talks to it only by message.
+  const SHELL = 'app://gisoo';
   const stateKey = `gisoo-chat:${chatId}`;
   const api = {
     postMessage(message: unknown): void {
-      window.parent.postMessage({ gisooChat: chatId, msg: message }, location.origin);
+      window.parent.postMessage({ gisooChat: chatId, msg: message }, SHELL);
     },
     getState(): unknown {
       try {
@@ -38,7 +40,7 @@
 
   // The shell changes the theme without reloading the chat.
   window.addEventListener('message', (event) => {
-    if (event.source !== window.parent || event.origin !== location.origin) return;
+    if (event.source !== window.parent || event.origin !== SHELL) return;
     const data = event.data as { gisooTheme?: string; gisooReserve?: { left: number; right: number } } | null;
     if (!data) return;
     if (data.gisooTheme === 'dark' || data.gisooTheme === 'light') document.documentElement.dataset.theme = data.gisooTheme;
@@ -49,4 +51,43 @@
       document.documentElement.style.setProperty('--reserve-right', `${Math.max(0, data.gisooReserve.right | 0)}px`);
     }
   });
+
+  // The header is the window's title bar, but a frame cannot mark parts of the window as draggable.
+  // Tell the shell where the header is and where its controls are; the shell lays a drag region over
+  // the header with holes for the controls.
+  type Box = [number, number, number, number];
+  const box = (r: DOMRect): Box => [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)];
+  let last = '';
+  let queued = false;
+  const report = (): void => {
+    queued = false;
+    const header = document.querySelector('.header');
+    const rect = header?.getBoundingClientRect();
+    const drag =
+      header && rect && rect.width > 0 && rect.height > 0
+        ? {
+            header: box(rect),
+            holes: [...header.children]
+              .map((c) => c.getBoundingClientRect())
+              .filter((r) => r.width > 0 && r.height > 0)
+              .map(box),
+          }
+        : null;
+    const key = JSON.stringify(drag);
+    if (key === last) return;
+    last = key;
+    window.parent.postMessage({ gisooChat: chatId, gisooDrag: drag }, SHELL);
+  };
+  const schedule = (): void => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(report);
+  };
+  const start = (): void => {
+    new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
+    window.addEventListener('resize', schedule);
+    schedule();
+  };
+  if (document.body) start();
+  else document.addEventListener('DOMContentLoaded', start, { once: true });
 })();

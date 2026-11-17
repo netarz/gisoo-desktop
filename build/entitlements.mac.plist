@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <!--
+    The hardened runtime exceptions Gisoo needs, and nothing more:
+    - JIT for V8 (Electron cannot run without it);
+    - audio input, for dictating a message (the app asks the owner first).
+    Library validation stays on and unsigned executable memory stays off.
+  -->
+  <dict>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+  </dict>
+</plist>

@@ -17,6 +17,36 @@ const MAX_OPEN = 8;
 /** Width of the native window controls: macOS traffic lights on the left, the Windows/Linux overlay on the right. */
 const CONTROLS = isMac ? { side: 'left' as const, px: 78 } : { side: 'right' as const, px: 140 };
 const PREVIEW_COUNT = 5;
+/** Chat pages are served from an origin of their own; see main/main.ts. */
+const CHAT_ORIGIN = 'app://chat';
+
+type Box = [number, number, number, number];
+interface DragArea {
+  header: Box;
+  holes: Box[];
+}
+
+function isBox(v: unknown): v is Box {
+  return Array.isArray(v) && v.length === 4 && v.every((n) => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) < 100000);
+}
+
+function validDrag(v: unknown): DragArea | null {
+  const d = v as DragArea | null;
+  if (!d || !isBox(d.header) || !Array.isArray(d.holes) || d.holes.length > 64 || !d.holes.every(isBox)) return null;
+  return { header: d.header, holes: d.holes };
+}
+
+/** A drag region over a chat's header, with holes where its buttons are; it takes no clicks itself. */
+function DragOverlay({ area }: { area: DragArea }) {
+  const [x, y, w, h] = area.header;
+  return (
+    <div class="chat-drag" style={{ left: x, top: y, width: w, height: h }}>
+      {area.holes.map(([hx, hy, hw, hh], i) => (
+        <div key={i} class="chat-drag-hole" style={{ left: hx - x, top: hy - y, width: hw, height: hh }} />
+      ))}
+    </div>
+  );
+}
 
 interface OpenChat extends OpenedChat {
   title?: string;
@@ -38,6 +68,8 @@ function App() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => store('expanded', {}));
   const [showAll, setShowAll] = useState<Record<string, boolean>>({});
   const [chats, setChats] = useState<OpenChat[]>([]);
+  /** Each chat's header, reported by the chat page: the part of the window it can be dragged by. */
+  const [drag, setDrag] = useState<Record<string, DragArea | null>>({});
   const [active, setActive] = useState<string | null>(null);
   const [currentProject, setCurrentProject] = useState<string | undefined>(() => store<string | undefined>('project', undefined));
   const [sideOpen, setSideOpen] = useState<boolean>(() => store('side', true));
@@ -92,7 +124,7 @@ function App() {
 
   const toFrame = (chatId: string, msg: unknown) => {
     const f = frames.current.get(chatId);
-    f?.contentWindow?.postMessage(msg, location.origin);
+    f?.contentWindow?.postMessage(msg, CHAT_ORIGIN);
   };
 
   const touch = (chatId: string) => {
@@ -167,12 +199,17 @@ function App() {
   // Messages from the chat pages go to the main process.
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== location.origin) return;
-      const data = event.data as { gisooChat?: string; msg?: unknown } | null;
+      if (event.origin !== CHAT_ORIGIN) return;
+      const data = event.data as { gisooChat?: string; msg?: unknown; gisooDrag?: DragArea | null } | null;
       if (!data || typeof data.gisooChat !== 'string') return;
       const chatId = data.gisooChat;
       const frame = frames.current.get(chatId);
       if (!frame || event.source !== frame.contentWindow) return;
+      if ('gisooDrag' in data) {
+        const area = validDrag(data.gisooDrag);
+        setDrag((d) => ({ ...d, [chatId]: area }));
+        return;
+      }
       const waiting = pending.current.get(chatId);
       if (waiting) {
         pending.current.delete(chatId);
@@ -443,7 +480,7 @@ function App() {
   }, [sideOpen, app?.lang]);
 
   useEffect(() => {
-    for (const f of frames.current.values()) f.contentWindow?.postMessage({ gisooReserve: reserve }, location.origin);
+    for (const f of frames.current.values()) f.contentWindow?.postMessage({ gisooReserve: reserve }, CHAT_ORIGIN);
   }, [reserve, chats.length]);
 
   const sideBar = useMemo(() => {
@@ -675,7 +712,7 @@ function App() {
               key={c.chatId}
               class={c.chatId === active && !settings ? 'on' : ''}
               title={c.title ?? t('گفت‌وگو', 'Chat')}
-              src={`../chat/chat.html?chat=${encodeURIComponent(c.chatId)}&lang=${app.lang}`}
+              src={`${CHAT_ORIGIN}/chat/chat.html?chat=${encodeURIComponent(c.chatId)}&lang=${app.lang}`}
               allow="clipboard-write; microphone"
               ref={(el) => {
                 if (el && !frames.current.has(c.chatId)) {
@@ -683,9 +720,10 @@ function App() {
                   if (!c.ready && !pending.current.has(c.chatId)) pending.current.set(c.chatId, []);
                 }
               }}
-              onLoad={(e) => e.currentTarget.contentWindow?.postMessage({ gisooReserve: reserve }, location.origin)}
+              onLoad={(e) => e.currentTarget.contentWindow?.postMessage({ gisooReserve: reserve }, CHAT_ORIGIN)}
             />
           ))}
+          {activeChat && !settings && drag[activeChat.chatId] && <DragOverlay area={drag[activeChat.chatId]!} />}
         </div>
 
         {!activeChat && !settings && (

@@ -83,8 +83,9 @@ class SecretStore {
   }
 
   async store(key: string, value: string): Promise<void> {
-    // Without OS encryption (some Linux sessions) the value is kept as plain base64, marked `p:`.
-    this.values[key] = safeStorage.isEncryptionAvailable()
+    // Without OS encryption (some Linux sessions) the value is kept as plain base64, marked `p:`, in a
+    // file only the owner can read; the 'basic_text' backend is a fixed key, so it counts as none.
+    this.values[key] = osEncryption()
       ? `e:${safeStorage.encryptString(value).toString('base64')}`
       : `p:${Buffer.from(value, 'utf8').toString('base64')}`;
     this.write();
@@ -169,4 +170,14 @@ export function createContext(opts: { userData: string; appRoot: string; version
     environmentVariableCollection: {},
     asAbsolutePath: (rel: string) => path.join(opts.appRoot, rel),
   };
+}
+
+function osEncryption(): boolean {
+  if (!safeStorage.isEncryptionAvailable()) return false;
+  if (process.platform !== 'linux') return true;
+  try {
+    return safeStorage.getSelectedStorageBackend() !== 'basic_text';
+  } catch {
+    return false;
+  }
 }

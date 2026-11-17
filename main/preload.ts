@@ -24,9 +24,13 @@ const INVOKE = new Set([
   'account:refresh',
   'link:open',
   'window:control',
+  'mcp:list',
+  'mcp:set',
+  'mcp:approve',
+  'mcp:reconnect',
 ]);
 
-const EVENTS = new Set(['chat:msg', 'chat:meta', 'host:request', 'host:notice', 'sidebar:changed', 'state:changed', 'chat:openRequest']);
+const EVENTS = new Set(['chat:msg', 'chat:meta', 'host:request', 'host:notice', 'sidebar:changed', 'state:changed', 'chat:openRequest', 'mcp:changed']);
 
 contextBridge.exposeInMainWorld('gisoo', {
   platform: process.platform,

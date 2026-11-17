@@ -77,7 +77,24 @@
       "artifactName": "Gisoo-${version}-${arch}.${ext}",
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Gisoo uses the microphone only while you dictate a message."
-      }
+      },
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "sign": false
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "loadBrowserProcessSpecificV8Snapshot": false,
+      "grantFileProtocolExtraPrivileges": false
     },
     "linux": {
       "target": [
@@ -87,6 +104,7 @@
     }
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@types/node": "^22.20.5",
     "@types/vscode": "^1.146.0",
     "@vscode/codicons": "^0.0.46-24",
@@ -97,6 +115,7 @@
     "highlight.js": "^11.12.0",
     "marked": "^18.2.1",
     "preact": "^11.2.0",
+    "smol-toml": "1.9.1",
     "typescript": "~6.0.3",
     "vazirmatn": "^33.0.3"
   }

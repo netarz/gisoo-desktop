@@ -5,7 +5,8 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { app, BrowserWindow, ipcMain, Menu, nativeTheme, net, protocol, shell } from 'electron';
+import { execFileSync } from 'node:child_process';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, protocol, shell } from 'electron';
 import type * as vscodeTypes from 'vscode';
 import { GisooClient } from '../src/api/client';
 import { AuthService, SECRET_KEY } from '../src/auth/service';
@@ -28,18 +29,48 @@ import type { AccountView, AppState, Lang, OpenChatRequest, SettingField } from 
 import { ChatManager } from './chats';
 import { createContext } from './context';
 import { HostBridge } from './hostBridge';
+import { McpHub } from './mcp';
 import { Projects } from './projects';
 
 const SCHEME = 'gisoo-desktop';
 const APP_ORIGIN = 'app://gisoo';
+/**
+ * Chat pages load from an origin of their own. The chat renders model output, so it is the page most
+ * exposed to injected content; a different origin means it cannot reach the shell's `window.gisoo`
+ * bridge and can only talk through postMessage, which the shell checks.
+ */
+const CHAT_ORIGIN = 'app://chat';
 const dist = __dirname;
 const appRoot = path.resolve(dist, '..');
 const version = app.getVersion();
+/** Development hooks (separate profile, snapshots, devtools) exist only when running from source. */
+const dev = !app.isPackaged;
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, codeCache: true } }]);
 
 // A separate profile for trying the app without touching the real one (projects, sign-in, chats).
-if (process.env.GISOO_USER_DATA) app.setPath('userData', path.resolve(process.env.GISOO_USER_DATA));
+if (dev && process.env.GISOO_USER_DATA) app.setPath('userData', path.resolve(process.env.GISOO_USER_DATA));
+
+// Started from the Dock or Finder, a macOS app gets a bare PATH (no Homebrew, nvm, npx…), so commands and
+// MCP servers would not be found. Take the PATH the owner's login shell builds, once, at startup.
+if (app.isPackaged && process.platform !== 'win32') loginShellPath();
+
+function loginShellPath(): void {
+  try {
+    const shellBin = process.env.SHELL || (process.platform === 'darwin' ? '/bin/zsh' : '/bin/sh');
+    const mark = '__GISOO_PATH__';
+    const out = execFileSync(shellBin, ['-ilc', `printf '${mark}%s${mark}' "$PATH"`], {
+      encoding: 'utf8',
+      timeout: 5000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      env: { ...process.env, DISABLE_AUTO_UPDATE: 'true' },
+    });
+    const found = out.split(mark)[1];
+    if (found && found.includes('/')) process.env.PATH = found;
+  } catch {
+    /* keep the PATH we were given */
+  }
+}
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -143,9 +174,11 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
     if (!rt) throw new Error('No project is open.');
     return rt.context;
   };
+  // Memory writes into the project folder without asking, so only a folder the owner trusts offers it.
   const unregisterMemory = tools.registerTool(createMemoryTool({ stores: () => projectContext().stores(), onChanged: () => projectContext().markDirty() }), {
     readOnly: false,
     needsApproval: false,
+    available: () => !!currentProject()?.trusted,
   });
   const unregisterSkill = tools.registerTool(createSkillTool({ skills: () => projectContext().skillList(), onLoaded: (skill) => projectContext().allowSkillReads(skill) }), {
     readOnly: true,
@@ -164,6 +197,24 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
     graphQueue = graphQueue.then(() => runInProject(rt.scope, () => graph.start())).catch(() => undefined);
   };
   const preview = previewManager();
+
+  // MCP servers (Claude Code, Codex and Gisoo configs, plus AStack's shared brain), per trusted project.
+  const mcp = new McpHub({
+    userData,
+    version,
+    lang: () => getSettings().language,
+    project: (id) => {
+      const p = projects.get(id);
+      return p && !p.missing ? { root: p.root, trusted: p.trusted } : undefined;
+    },
+    confirm: async ({ title, detail, yes, no }) => {
+      const w = getWin();
+      const opts = { type: 'question' as const, buttons: [yes, no], defaultId: 1, cancelId: 1, title: 'Gisoo', message: title, detail, noLink: true };
+      const { response } = w && !w.isDestroyed() ? await dialog.showMessageBox(w, opts) : await dialog.showMessageBox(opts);
+      return response === 0;
+    },
+    onChange: (projectId) => send('mcp:changed', projectId),
+  });
 
   const accountView = (a: AccountInfo): AccountView => {
     const lang = getSettings().language;
@@ -194,6 +245,7 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
     { dispose: unregisterSkill },
     graph,
     preview,
+    mcp,
     { dispose: () => setVoiceInput(undefined) },
     auth.onDidChange(() => pushState()),
     workspace.onDidChangeConfiguration((e) => {
@@ -303,6 +355,7 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
   });
   handle('projects:remove', (id: string) => {
     chats.closeProject(id);
+    mcp.closeProject(id);
     projects.remove(id);
     pushState();
   });
@@ -313,6 +366,9 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
       // Instruction files, commands and the graph now load for this folder.
       runInProject(rt.scope, () => fireTrustGranted());
       startGraph(id, true);
+      void mcp.ensure(id);
+    } else if (!trusted) {
+      mcp.closeProject(id);
     }
     pushState();
   });
@@ -326,14 +382,42 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
   handle('chat:open', async (req: OpenChatRequest) => {
     const opened = await chats.open(req);
     startGraph(req.projectId);
+    // Connected in the background; a server that is still starting simply offers its tools a moment later.
+    void mcp.ensure(req.projectId);
     return opened;
   });
+  handle('mcp:list', (projectId: string) => mcp.list(String(projectId)));
+  handle('mcp:set', (projectId: string, name: string, enabled: boolean) => mcp.setEnabled(String(projectId), String(name), !!enabled));
+  handle('mcp:approve', (projectId: string, name: string, approve: boolean) => mcp.approve(String(projectId), String(name), !!approve));
+  handle('mcp:reconnect', (projectId: string, name?: string) => mcp.reconnect(String(projectId), typeof name === 'string' ? name : undefined));
   handle('chat:close', (chatId: string) => chats.close(chatId));
   handle('chat:post', (chatId: string, message: unknown) => chats.post(chatId, message));
   handle('host:reply', (id: number, answer: unknown) => bridge.reply(id, answer));
   handle('settings:get', (projectId?: string) => settingFields(settings, projectId ? projects.get(projectId)?.root : undefined));
-  handle('settings:set', (key: string, value: unknown, projectId?: string) => {
-    if (!(key in SCHEMA)) throw new Error('unknown setting');
+  handle('settings:set', async (key: string, value: unknown, projectId?: string) => {
+    if (typeof key !== 'string' || !(key in SCHEMA)) throw new Error('unknown setting');
+    if (projectId && USER_ONLY.has(key)) throw new Error('user setting');
+    const loosens = key !== 'gisoo.permissionMode' || value === 'autoEdit' || value === 'bypass';
+    if (SENSITIVE.has(key) && loosens && JSON.stringify(value) !== JSON.stringify(settings.userValue(key))) {
+      const fa = lang() === 'fa';
+      const shown = typeof value === 'string' ? value : JSON.stringify(value);
+      const w = getWin();
+      const opts = {
+        type: 'warning' as const,
+        buttons: fa ? ['تغییر بده', 'انصراف'] : ['Change', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1,
+        title: 'Gisoo',
+        message: fa ? `تنظیم «${key}» تغییر کند؟` : `Change ${key}?`,
+        detail: `${fa ? 'مقدار تازه' : 'New value'}: ${shown.slice(0, 300)}\n\n${
+          fa
+            ? 'این تنظیم تعیین می‌کند کلید شما به کدام نشانی فرستاده شود یا دستیار بدون پرسیدن چه کاری بکند.'
+            : 'This setting decides where your key is sent or what the agent may do without asking.'
+        }`,
+      };
+      const { response } = w ? await dialog.showMessageBox(w, opts) : await dialog.showMessageBox(opts);
+      if (response !== 0) throw new Error('cancelled');
+    }
     const root = projectId ? projects.get(projectId)?.root : undefined;
     if (root) settings.setProject(root, key, value);
     else settings.setUser(key, value);
@@ -385,12 +469,28 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
   };
 }
 
+/**
+ * Keys the core reads from the user's own settings only (`userSetting` in src/config.ts): they move the API
+ * key, the approval policy, the bill or what runs on the machine, so a project file never sets them and the
+ * project tab of the settings page does not offer them.
+ */
+const USER_ONLY = new Set(
+  [
+    'agents.maxParallel', 'agents.maxTurns', 'allowedCommands', 'baseUrl', 'browserPath', 'customInstructions',
+    'graphify.autoInstall', 'importExternalChats', 'maxCostPerTask', 'maxSteps', 'permissionMode', 'region', 'webFetch.enabled',
+  ].map((k) => `gisoo.${k}`),
+);
+
+/** Changing one of these asks the owner in a native dialog first, whoever asked for it. */
+const SENSITIVE = new Set(['gisoo.baseUrl', 'gisoo.allowedCommands', 'gisoo.permissionMode']);
+
 /** Settings for the settings page: every `gisoo.*` key the extension declares, in the UI language. */
 function settingFields(store: SettingsStore, projectRoot: string | undefined): SettingField[] {
   const lang = getSettings().language;
   const out: SettingField[] = [];
   for (const [key, s] of Object.entries(SCHEMA)) {
     if (!key.startsWith('gisoo.')) continue;
+    if (projectRoot && USER_ONLY.has(key)) continue;
     const projectValue = projectRoot ? store.projectValue(projectRoot, key) : undefined;
     const value = projectValue !== undefined ? projectValue : store.userValue(key);
     const desc = s.description?.[lang] ?? s.description?.en ?? '';
@@ -417,20 +517,35 @@ function isAppFrame(url: string | undefined): boolean {
   return !!url && url.startsWith(`${APP_ORIGIN}/`);
 }
 
-/** Serves dist/ as app://gisoo/…; nothing outside dist/ is reachable. */
+function isChatFrame(url: string | undefined): boolean {
+  return !!url && url.startsWith(`${CHAT_ORIGIN}/chat/chat.html`);
+}
+
+const BASE_CSP =
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; " +
+  "connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'";
+
+/**
+ * Serves dist/ as app://gisoo/… (the shell) and the chat page, its scripts and fonts as app://chat/…;
+ * nothing outside dist/ is reachable, and the chat origin reaches only what the chat page needs.
+ */
 function serveApp(): void {
   protocol.handle('app', async (request) => {
     const url = new URL(request.url);
-    if (url.host !== 'gisoo') return new Response('not found', { status: 404 });
+    if (url.host !== 'gisoo' && url.host !== 'chat') return new Response('not found', { status: 404 });
     const rel = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+    if (url.host === 'chat' && !/^(chat|fonts)\//.test(rel)) return new Response('not found', { status: 404 });
     const file = path.resolve(dist, rel);
     if (!file.startsWith(dist + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return new Response('not found', { status: 404 });
     const res = await net.fetch(`file://${file.replace(/\\/g, '/').replace(/^([A-Za-z]):/, '/$1:')}`);
     const headers = new Headers(res.headers);
+    headers.set('X-Content-Type-Options', 'nosniff');
     if (file.endsWith('.html')) {
       headers.set(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'",
+        url.host === 'chat'
+          ? `${BASE_CSP}; frame-src 'none'; frame-ancestors ${APP_ORIGIN}`
+          : `${BASE_CSP}; frame-src ${CHAT_ORIGIN}; frame-ancestors 'none'`,
       );
     }
     return new Response(res.body, { status: res.status, headers });
@@ -479,11 +594,16 @@ function createWindow(): BrowserWindow {
       if (/^(https?:|mailto:)/i.test(url)) void shell.openExternal(url);
     }
   });
+  // The shell stays the shell; a frame may only ever be a chat page.
   win.webContents.on('will-frame-navigate', (e) => {
-    if (!isAppFrame(e.url)) e.preventDefault();
+    if (e.isMainFrame ? !isAppFrame(e.url) : !isChatFrame(e.url)) e.preventDefault();
   });
+  win.webContents.on('will-attach-webview', (e) => e.preventDefault());
   // The composer's mic needs audio; nothing else (camera, location, notifications…) is granted.
-  win.webContents.session.setPermissionRequestHandler((_wc, permission, cb, details) => {
+  const ours = (origin: string | undefined) => !!origin && (origin.startsWith(APP_ORIGIN) || origin.startsWith(CHAT_ORIGIN));
+  const ses = win.webContents.session;
+  ses.setPermissionRequestHandler((_wc, permission, cb, details) => {
+    if (!ours(details.requestingUrl)) return cb(false);
     if (permission === 'clipboard-sanitized-write') return cb(true);
     if (permission === 'media') {
       const types = (details as { mediaTypes?: string[] }).mediaTypes ?? [];
@@ -491,9 +611,15 @@ function createWindow(): BrowserWindow {
     }
     cb(false);
   });
+  ses.setPermissionCheckHandler((_wc, permission, origin, details) => {
+    if (!ours(origin)) return false;
+    if (permission === 'clipboard-sanitized-write') return true;
+    if (permission === 'media') return (details as { mediaType?: string }).mediaType === 'audio';
+    return false;
+  });
   void win.loadURL(`${APP_ORIGIN}/shell/index.html`);
-  if (process.env.GISOO_DEVTOOLS === '1') win.webContents.openDevTools({ mode: 'detach' });
-  if (process.env.GISOO_SNAPSHOT) snapshot(win, process.env.GISOO_SNAPSHOT);
+  if (dev && process.env.GISOO_DEVTOOLS === '1') win.webContents.openDevTools({ mode: 'detach' });
+  if (dev && process.env.GISOO_SNAPSHOT) snapshot(win, process.env.GISOO_SNAPSHOT);
   return win;
 }
 

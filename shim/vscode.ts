@@ -495,7 +495,10 @@ function configuration(section?: string) {
   const full = (key: string): string => (section ? `${section}.${key}` : key);
   const inspect = <T>(key: string) => {
     const k = full(key);
-    const root = currentProject()?.root;
+    // A folder's own `.gisoo/settings.json` counts only once the folder is trusted: a cloned repository
+    // must not pick the model (and so the bill) or anything else before the owner says yes.
+    const project = currentProject();
+    const root = project?.trusted ? project.root : undefined;
     return {
       key: k,
       defaultValue: defaultValue(k) as T | undefined,

@@ -93,6 +93,21 @@ export interface SettingField {
   scope?: string;
 }
 
+export type McpSource = 'project:gisoo' | 'project:claude' | 'project:codex' | 'user:gisoo' | 'user:claude-local' | 'user:claude' | 'user:codex' | 'astack';
+export type McpStatus = 'off' | 'needsApproval' | 'denied' | 'connecting' | 'connected' | 'failed' | 'idle';
+
+/** One MCP server as the settings page shows it. Never carries env values or headers. */
+export interface McpServerView {
+  name: string;
+  source: McpSource;
+  transport: 'stdio' | 'http' | 'sse';
+  target: string;
+  status: McpStatus;
+  tools: number;
+  error?: string;
+  projectLevel: boolean;
+}
+
 /** Requests the main process makes of the shell (dialogs drawn in the window). */
 export type HostRequest =
   | { kind: 'message'; level: 'info' | 'warning' | 'error'; text: string; detail?: string; modal?: boolean; actions: string[] }
