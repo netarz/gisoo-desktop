@@ -3,6 +3,7 @@
  * (Gisoo's own, plus Claude Code, Codex and VS Code chats of the same folder), Recents, the account,
  * and on the other side the open chat — the extension's own chat page in an iframe, one per chat.
  */
+import './px';
 import { render } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { AccountView, AppState, ChatItem, ChatMeta, HostNotice, HostRequest, OpenChatRequest, OpenedChat, ProjectInfo } from '../main/api';
@@ -37,13 +38,17 @@ function validDrag(v: unknown): DragArea | null {
 }
 
 /** A drag region over a chat's header, with holes where its buttons are; it takes no clicks itself. */
-function DragOverlay({ area }: { area: DragArea }) {
+function DragOverlay({ area, toggleStart }: { area: DragArea; toggleStart?: number }) {
   const [x, y, w, h] = area.header;
   return (
     <div class="chat-drag" style={{ left: x, top: y, width: w, height: h }}>
       {area.holes.map(([hx, hy, hw, hh], i) => (
         <div key={i} class="chat-drag-hole" style={{ left: hx - x, top: hy - y, width: hw, height: hh }} />
       ))}
+      {/* The shell's floating sidebar button sits over the chat's header; a hole here keeps it clickable
+          (a no-drag element outside this overlay does not reliably win over it). Fixed: it is placed
+          against the window, like the button. */}
+      {toggleStart !== undefined && <div class="chat-drag-hole toggle-hole" style={{ insetInlineStart: toggleStart }} />}
     </div>
   );
 }
@@ -480,7 +485,8 @@ function App() {
   }, [sideOpen, app?.lang]);
 
   useEffect(() => {
-    for (const f of frames.current.values()) f.contentWindow?.postMessage({ gisooReserve: reserve }, CHAT_ORIGIN);
+    // A frame that has not loaded yet still holds about:blank; its onLoad sends the reserve.
+    for (const f of frames.current.values()) if (f.dataset.loaded) f.contentWindow?.postMessage({ gisooReserve: reserve }, CHAT_ORIGIN);
   }, [reserve, chats.length]);
 
   const sideBar = useMemo(() => {
@@ -491,6 +497,8 @@ function App() {
     return { paddingLeft: pad.left, paddingRight: pad.right };
   }, [app?.lang]);
   const mainBar = { paddingLeft: 10 + reserve.left, paddingRight: 10 + reserve.right };
+  /** With the sidebar hidden, its button floats at the inline start of the window, past the window controls if they are there. */
+  const toggleStart = 10 + (CONTROLS.side === (app?.lang === 'en' ? 'left' : 'right') ? CONTROLS.px : 0);
 
   // ----------------------------------------------------------------------------- views
 
@@ -700,12 +708,6 @@ function App() {
       </aside>
 
       <main class="main">
-        {!sideOpen && (
-          <button class="icon-btn floating-toggle" style={{ [app.lang === 'en' ? 'left' : 'right']: 10 + (CONTROLS.side === (app.lang === 'en' ? 'left' : 'right') ? CONTROLS.px : 0), insetInlineStart: 'auto' } as any} onClick={toggleSide} title={t('نمایش نوار کناری', 'Show sidebar')}>
-            <Icon name="sidebar" />
-          </button>
-        )}
-
         <div class="frames">
           {chats.map((c) => (
             <iframe
@@ -720,10 +722,13 @@ function App() {
                   if (!c.ready && !pending.current.has(c.chatId)) pending.current.set(c.chatId, []);
                 }
               }}
-              onLoad={(e) => e.currentTarget.contentWindow?.postMessage({ gisooReserve: reserve }, CHAT_ORIGIN)}
+              onLoad={(e) => {
+                e.currentTarget.dataset.loaded = '1';
+                e.currentTarget.contentWindow?.postMessage({ gisooReserve: reserve }, CHAT_ORIGIN);
+              }}
             />
           ))}
-          {activeChat && !settings && drag[activeChat.chatId] && <DragOverlay area={drag[activeChat.chatId]!} />}
+          {activeChat && !settings && drag[activeChat.chatId] && <DragOverlay area={drag[activeChat.chatId]!} toggleStart={sideOpen ? undefined : toggleStart} />}
         </div>
 
         {!activeChat && !settings && (
@@ -764,6 +769,13 @@ function App() {
         {tasksOpen && tasks.length > 0 && !settings && <TaskDrawer tasks={tasks} onClose={() => setTasksOpen(false)} />}
 
         {settings && <SettingsPage query={settings.query} project={focusProject} account={account} onClose={() => setSettings(null)} onSignIn={signIn} barStyle={mainBar} />}
+
+        {/* Last in the pane: a no-drag element only wins over drag regions that come before it. */}
+        {!sideOpen && (
+          <button class="icon-btn floating-toggle" style={{ insetInlineStart: toggleStart }} onClick={toggleSide} title={t('نمایش نوار کناری', 'Show sidebar')}>
+            <Icon name="sidebar" />
+          </button>
+        )}
       </main>
 
       {overlay?.kind === 'document' && <DocumentView doc={overlay.doc} onClose={() => setOverlay(null)} />}

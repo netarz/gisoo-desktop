@@ -28,6 +28,7 @@ import { commands, env, fireTrustGranted, installSettings, setUiLanguage, Uri, w
 import type { AccountView, AppState, Lang, OpenChatRequest, SettingField } from './api';
 import { ChatManager } from './chats';
 import { createContext } from './context';
+import { bidiBox } from './bidi';
 import { HostBridge } from './hostBridge';
 import { McpHub } from './mcp';
 import { Projects } from './projects';
@@ -209,7 +210,7 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
     },
     confirm: async ({ title, detail, yes, no }) => {
       const w = getWin();
-      const opts = { type: 'question' as const, buttons: [yes, no], defaultId: 1, cancelId: 1, title: 'Gisoo', message: title, detail, noLink: true };
+      const opts = bidiBox({ type: 'question' as const, buttons: [yes, no], defaultId: 1, cancelId: 1, title: 'Gisoo', message: title, detail, noLink: true });
       const { response } = w && !w.isDestroyed() ? await dialog.showMessageBox(w, opts) : await dialog.showMessageBox(opts);
       return response === 0;
     },
@@ -402,7 +403,7 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
       const fa = lang() === 'fa';
       const shown = typeof value === 'string' ? value : JSON.stringify(value);
       const w = getWin();
-      const opts = {
+      const opts = bidiBox({
         type: 'warning' as const,
         buttons: fa ? ['تغییر بده', 'انصراف'] : ['Change', 'Cancel'],
         defaultId: 1,
@@ -414,7 +415,7 @@ function startCore(userData: string, settings: SettingsStore, bridge: HostBridge
             ? 'این تنظیم تعیین می‌کند کلید شما به کدام نشانی فرستاده شود یا دستیار بدون پرسیدن چه کاری بکند.'
             : 'This setting decides where your key is sent or what the agent may do without asking.'
         }`,
-      };
+      });
       const { response } = w ? await dialog.showMessageBox(w, opts) : await dialog.showMessageBox(opts);
       if (response !== 0) throw new Error('cancelled');
     }

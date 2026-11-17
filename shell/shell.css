@@ -174,10 +174,13 @@ svg { flex: none; }
 /* The chat header as the window's title bar: a drag region with no-drag holes, transparent to clicks. */
 .chat-drag { position: absolute; z-index: 1; pointer-events: none; -webkit-app-region: drag; }
 .chat-drag-hole { position: absolute; pointer-events: none; -webkit-app-region: no-drag; }
+/* Same box as .floating-toggle (top 8px, 28px icon button), against the window. */
+.chat-drag-hole.toggle-hole { position: fixed; top: 8px; width: 28px; height: 28px; }
 
 .main > .dragbar { position: relative; z-index: 2; padding-inline-start: calc(10px + var(--ctl-start, 0px)); padding-inline-end: calc(10px + var(--ctl-end, 0px)); }
 
-.floating-toggle { position: absolute; top: 8px; z-index: 5; inset-inline-start: calc(10px + var(--ctl-start, 0px)); }
+/* Its offset is set inline: past the window controls when they sit on the same edge. */
+.floating-toggle { position: absolute; top: 8px; z-index: 5; -webkit-app-region: no-drag; }
 
 /* Home, welcome and sign-in screens. */
 .screen {

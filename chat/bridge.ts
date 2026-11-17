@@ -57,22 +57,26 @@
   // the header with holes for the controls.
   type Box = [number, number, number, number];
   const box = (r: DOMRect): Box => [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)];
+  const TOP_STRIP = 40;
   let last = '';
   let queued = false;
   const report = (): void => {
     queued = false;
     const header = document.querySelector('.header');
     const rect = header?.getBoundingClientRect();
+    const visible = (r: DOMRect): boolean => r.width > 0 && r.height > 0;
     const drag =
-      header && rect && rect.width > 0 && rect.height > 0
-        ? {
-            header: box(rect),
-            holes: [...header.children]
+      header && rect && visible(rect)
+        ? { header: box(rect), holes: [...header.children].map((c) => c.getBoundingClientRect()).filter(visible).map(box) }
+        : // Pages without a header (sign-in, errors) still need a title bar: the top strip, around
+          // anything clickable that reaches into it.
+          {
+            header: [0, 0, Math.round(window.innerWidth), TOP_STRIP] as Box,
+            holes: [...document.querySelectorAll('button, a, input, select, textarea, [role="button"], [tabindex]')]
               .map((c) => c.getBoundingClientRect())
-              .filter((r) => r.width > 0 && r.height > 0)
+              .filter((r) => visible(r) && r.top < TOP_STRIP)
               .map(box),
-          }
-        : null;
+          };
     const key = JSON.stringify(drag);
     if (key === last) return;
     last = key;

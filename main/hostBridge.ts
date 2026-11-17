@@ -5,6 +5,7 @@
 import { clipboard, dialog, shell, type BrowserWindow } from 'electron';
 import type { DesktopHost, PickItem } from '../shim/host';
 import type { HostNotice, HostRequest } from './api';
+import { bidiBox } from './bidi';
 
 /** Only these leave the app through the system browser or mail client. */
 const SAFE_LINK = /^(https?:|mailto:)/i;
@@ -51,7 +52,7 @@ export class HostBridge implements DesktopHost {
       // VS Code adds its own "Cancel" to a modal; the last button here plays that part.
       const fa = /[؀-ۿ]/.test(text);
       const buttons = [...actions, fa ? 'انصراف' : 'Cancel'];
-      const r = await dialog.showMessageBox(win, {
+      const r = await dialog.showMessageBox(win, bidiBox({
         type: level === 'error' ? 'error' : level === 'warning' ? 'warning' : 'info',
         message: text,
         detail: options.detail,
@@ -59,7 +60,7 @@ export class HostBridge implements DesktopHost {
         cancelId: buttons.length - 1,
         defaultId: 0,
         noLink: true,
-      });
+      }));
       return r.response < actions.length ? r.response : undefined;
     }
     if (!actions.length) {
