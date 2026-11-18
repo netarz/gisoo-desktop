@@ -43,11 +43,10 @@ Download the installer for your system from the
 `Gisoo-<version>-arm64.dmg` (Apple silicon) or `-x64.dmg` (Intel) for macOS. Each release lists the
 SHA-256 of every file in `SHA256SUMS.txt`.
 
-Until our code-signing certificates are in place, the installers are not signed:
-
-- **Windows** shows "Windows protected your PC". Choose *More info*, then *Run anyway*.
-- **macOS** says the app "cannot be opened". Right-click Gisoo in Applications, choose *Open*, then
-  *Open* again (or allow it under System Settings, Privacy & Security).
+- **macOS** builds from 0.1.1 on are signed with our Developer ID and notarized by Apple: open the
+  `.dmg`, drag Gisoo to Applications and run it.
+- **Windows** builds are not code-signed yet, so Windows shows "Windows protected your PC". Choose
+  *More info*, then *Run anyway*, and compare the file with `SHA256SUMS.txt` if you want to be sure.
 
 Security reports: see [SECURITY.md](SECURITY.md).
 

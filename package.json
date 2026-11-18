@@ -1,7 +1,7 @@
 {
   "name": "gisoo-desktop",
   "productName": "Gisoo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Gisoo Desktop: an AI coding agent for Windows and macOS, with a folder of chats for every project.",
   "license": "MIT",
   "author": {
