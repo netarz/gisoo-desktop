@@ -84,6 +84,14 @@ jobs:
         run: |
           if [ -n "$CSC_LINK" ] && [ -n "$APPLE_API_KEY_BASE64" ]; then
             echo "Signing with Developer ID and notarizing."
+            # Check the certificate before a long build; prints only a length and a hash prefix.
+            P12="$RUNNER_TEMP/check.p12"; KC="$RUNNER_TEMP/check.keychain-db"
+            printf '%s' "$CSC_LINK" | base64 --decode > "$P12"
+            echo "p12 sha256 $(shasum -a 256 "$P12" | cut -c1-16), password length ${#CSC_KEY_PASSWORD}"
+            security create-keychain -p check "$KC"
+            security import "$P12" -k "$KC" -P "$CSC_KEY_PASSWORD" -T /usr/bin/codesign >/dev/null
+            security find-identity -v -p codesigning "$KC" | sed -E 's/[0-9A-F]{40}/<hash>/'
+            security delete-keychain "$KC"; rm -f "$P12"
             export APPLE_API_KEY="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
             printf '%s' "$APPLE_API_KEY_BASE64" | base64 --decode > "$APPLE_API_KEY"
             chmod 600 "$APPLE_API_KEY"
